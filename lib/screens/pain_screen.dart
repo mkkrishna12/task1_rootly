@@ -27,7 +27,12 @@ const _emojis = [
   '😵‍',
   '😵'
 ];
-
+const  List<String>painList=[
+  'No pain',
+  'Mild Pain',
+  'Moderate Pain',
+  'Severe Pain',
+];
 class PainScreen extends StatefulWidget {
   const PainScreen({Key key}) : super(key: key);
   static const String id = 'PainScreen';
@@ -38,7 +43,7 @@ class PainScreen extends StatefulWidget {
 
 class _PainScreenState extends State<PainScreen> {
   double _value = 0;
-
+  String pain = "No pain";
   void onPlay() async {
     final url = await _awsPolly.getUrl(
       voiceId: AWSPolyVoiceId.nicole,
@@ -69,26 +74,25 @@ class _PainScreenState extends State<PainScreen> {
                 width: double.infinity,
                 height: 170,
                 child: Center(
-                  child: ScoreReader(score: _value),
-                  // Text(
-                  //   "You Have $_score_val More sessions today",
-                  //   maxLines: 3,
-                  //   overflow: TextOverflow.ellipsis,
-                  //   textAlign: TextAlign.start,
-                  //   style: const TextStyle(
-                  //     color: Colors.black,
-                  //     fontWeight: FontWeight.bold,
-                  //     fontSize: 20,
-                  //   ),
-                  // ),
+                  child: Text(
+                    "You Have 2 More sessions today",
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
                 ),
               ),
               Expanded(
                 child: Container(
-                  decoration: const BoxDecoration(
+                  decoration:  BoxDecoration(
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
                     ),
                     color: Colors.white,
                   ),
@@ -96,7 +100,7 @@ class _PainScreenState extends State<PainScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        const SizedBox(
+                         SizedBox(
                           height: 30,
                           width: double.infinity,
                         ),
@@ -135,85 +139,88 @@ class _PainScreenState extends State<PainScreen> {
                             style: Theme.of(context).textTheme.bodyText1,
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Container(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                // Text(_emojis[0], softWrap: true),
-                                Expanded(
-                                  child: SfSlider(
-                                    min: 0,
-                                    max: 10,
-                                    value: _value.toInt(),
-                                    interval: 1,
-                                    showTicks: true,
-                                    showLabels: true,
-                                    enableTooltip: true,
-                                    showDividers: true,
-                                    dividerShape: const SfDividerShape(),
-                                    onChanged: (dynamic value) {
-                                      setState(() {
-                                        _score_val = value.toInt();
-                                        _value = value;
-                                        onPlay();
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            // Text(_emojis[0], softWrap: true),
+                            Expanded(
+                              child: SfSlider(
+                                min: 0,
+                                max: 10,
+                                value: _value.toInt(),
+                                interval: 1,
+                                showTicks: true,
+                                showLabels: true,
+                                enableTooltip: true,
+                                showDividers: true,
+                                dividerShape: const SfDividerShape(),
+                                onChanged: (dynamic value) {
+                                  setState(() {
+                                    _score_val = value.toInt();
+                                    _value = value;
+                                    // onPlay();
+
+                                  });
+                                  _fireStore.collection('painCollection').snapshots().listen(
+                                          (snapshot){
+                                        final messages = snapshot.docs.reversed;
+
+                                        setState(() {
+
+                                          for (var mes in messages) {
+                                            if (mes.get('scoreValue') == _value.toInt()) {
+                                              print(mes.get('pain'));
+                                              pain = mes.get('pain');
+                                              break;
+                                            } else {
+                                              pain = "Please wait...";
+                                            }
+                                          }
+                                        });
+                                  });
+                                },
+                              ),
                             ),
+
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 10.0,
+                        ),
+                        Text(pain,
+                          style: TextStyle(
+                            fontSize: 20.0,
+                            color: Colors.green
                           ),
                         ),
                         const SizedBox(
-                          height: 80,
+                          height: 60.0,
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Container(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Expanded(
-                                  child: Container(
-                                    // color: Colors.white,
-                                    // height: 40,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: Colors.black,
-                                        width: 2,
-                                      ),
-                                      borderRadius: const BorderRadius.all(
-                                          Radius.circular(20.0)),
-                                    ),
-                                    width: 200,
-                                    child: FlatButton(
-                                      onPressed: () {
-                                        _fireStore.collection('score').add({
-                                          'userid': _auth.currentUser.uid,
-                                          'score': _value.toInt() % 5 + 1,
-                                          'value': _value.toInt(),
-                                          'TS': FieldValue.serverTimestamp(),
-                                        });
-                                      },
-                                      child: const Text(
-                                        'Submit',
-                                        style: TextStyle(
-                                          fontSize: 20.0,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                // Text(
-                                //   _emojis[10],
-                                //   softWrap: true,
-                                // )
-                              ],
+
+                        Container(
+                          // color: Colors.white,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.all(Radius.circular(30.0)),
+                          ),
+                          width: 200,
+                          child: FlatButton(
+                            onPressed: () async{
+
+                            },
+                            child: const Text(
+                              'Submit',
+                              style: TextStyle(
+                                fontSize: 20.0,
+                              ),
                             ),
                           ),
-                        ),
+                        )
+
                       ],
                     ),
                   ),
@@ -226,52 +233,55 @@ class _PainScreenState extends State<PainScreen> {
     );
   }
 }
+//
+// class ScoreReader extends StatefulWidget {
+//   const ScoreReader({Key key, @required this.score}) : super(key: key);
+//   final double score;
+//   @override
+//   _ScoreReaderState createState() => _ScoreReaderState();
+// }
+//
+// class _ScoreReaderState extends State<ScoreReader> {
+//   String  score;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return StreamBuilder<QuerySnapshot>(
+//       stream: _fireStore.collection('score').orderBy('TS').snapshots(),
+//       builder: (context, snapshot) {
+//         if (!snapshot.hasData) {
+//           return const Center(
+//             child: CircularProgressIndicator(
+//               backgroundColor: Colors.lightBlueAccent,
+//             ),
+//           );
+//         }
+//         final messages = snapshot.data.docs.reversed;
+//         // print(messages);
+//         for (var mes in messages) {
+//           if (mes.get('value') == widget.score.toInt()) {
+//             score = mes.get('pain');
+//             break;
+//           } else {
+//             score = "Please wait...";
+//           }
+//         }
+//         return Container(
+//           height: 100,
+//           child: Text(
+//             score,
+//             maxLines: 3,
+//             overflow: TextOverflow.ellipsis,
+//             textAlign: TextAlign.start,
+//             style: const TextStyle(
+//               color: Colors.black,
+//               fontWeight: FontWeight.bold,
+//               fontSize: 20,
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
 
-class ScoreReader extends StatefulWidget {
-  const ScoreReader({Key key, @required this.score}) : super(key: key);
-  final double score;
-  @override
-  _ScoreReaderState createState() => _ScoreReaderState();
-}
-
-class _ScoreReaderState extends State<ScoreReader> {
-  int score = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _fireStore.collection('score').orderBy('TS').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(
-            child: CircularProgressIndicator(
-              backgroundColor: Colors.lightBlueAccent,
-            ),
-          );
-        }
-        final messages = snapshot.data.docs.reversed;
-        // print(messages);
-        for (var mes in messages) {
-          if (mes.get('value') == widget.score.toInt()) {
-            score = mes.get('score');
-          } else {
-            score = 0;
-          }
-        }
-        return Expanded(
-          child: Text(
-            "You Have $score More sessions today",
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.start,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
